@@ -81,19 +81,17 @@ clear_profile:
 
 update_firmware:
   name: Update charger firmware
-  description: Specify server to download firmware and time to delay updating (dependent on charger support), supported transfer protocols can be requested by the configuration key SupportedFileTransferProtocols
+  description: Ask the charger to download and install firmware from a hosted URL. The URL must be reachable by the charger and firmware updates must be supported by the charger.
   fields:
     devid:
       name: Charger identifier
-      description: Either HA charger id or Ocpp id
+      description: Charge point identity used in the OCPP integration. Leave empty when only one charger is connected.
       required: false
-      advanced: true
       example: charger
     firmware_url:
-      name: Url of firmware
-      description: Full url of firmware file (http or https)
+      name: Firmware file URL
+      description: HTTP or HTTPS address of the hosted firmware file. The charger downloads this file directly.
       required: true
-      advanced: true
       example: "http://www.charger.com/firmware.bin"
     delay_hours:
       name: Delay hours
