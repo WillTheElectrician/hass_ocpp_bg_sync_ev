@@ -66,12 +66,15 @@ they will overwrite each other.
 
 ## Updating charger firmware
 
-The integration provides the **OCPP: Update charger firmware** action under
-**Developer tools → Actions**. Enter the hosted firmware file's HTTP or HTTPS
-URL in **Firmware file URL**. If multiple chargers are configured, enter the
-target charger's identity in **Charger identifier**. The URL must be reachable
-by the charger itself; Home Assistant does not download or host the firmware.
-The charger must support OCPP firmware management for the update to work.
+On the charger's device page, enter the hosted firmware file's HTTP or HTTPS
+address in **Firmware File URL**, then press **Update Firmware**. The URL must
+be reachable by the charger itself; Home Assistant does not download or host
+the firmware. This control is available for connected OCPP 1.6 chargers that
+report Firmware Management support.
+
+The same operation is available as **OCPP: Update charger firmware** under
+**Developer tools → Actions**. If multiple chargers are configured, enter the
+target charger's identity in **Charger identifier**.
 
 ## Will this work on my charger?
 

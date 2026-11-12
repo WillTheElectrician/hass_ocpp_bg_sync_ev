@@ -11,7 +11,9 @@ from homeassistant.components.button import (
     ButtonEntity,
     ButtonEntityDescription,
 )
+from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import callback
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import DeviceInfo, EntityCategory
@@ -26,7 +28,7 @@ from .const import (
     DEFAULT_NUM_CONNECTORS,
     DOMAIN,
 )
-from .enums import HAChargerServices
+from .enums import HAChargerServices, Profiles
 
 
 @dataclass
@@ -53,6 +55,13 @@ BUTTONS: Final = [
         entity_category=EntityCategory.CONFIG,
         press_action=HAChargerServices.service_unlock.name,
         per_connector=True,
+    ),
+    OcppButtonDescription(
+        key="update_firmware",
+        name="Update Firmware",
+        icon="mdi:package-up",
+        entity_category=EntityCategory.CONFIG,
+        per_connector=False,
     ),
 ]
 
@@ -170,10 +179,51 @@ class ChargePointButton(ButtonEntity):
     @property
     def available(self) -> bool:
         """Return charger availability."""
+        if self.entity_description.key == "update_firmware":
+            cp_id = self.central_system.cpids.get(self.cpid, self.cpid)
+            cp = self.central_system.charge_points.get(cp_id)
+            return bool(
+                self.central_system.get_available(self.cpid, None)
+                and cp is not None
+                and cp._ocpp_version == "1.6"
+                and self.central_system.get_supported_features(self.cpid) & Profiles.FW
+            )
         return self.central_system.get_available(self.cpid, self._op_connector_id)
 
     async def async_press(self) -> None:
         """Triggers the charger press action service."""
+        if self.entity_description.key == "update_firmware":
+            url_entity_id = f"text.{slugify(f'{self.cpid}_firmware_url')}"
+            url_state = self.central_system.hass.states.get(url_entity_id)
+            firmware_url = (
+                url_state.state.strip()
+                if url_state
+                and url_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE)
+                else ""
+            )
+            if not firmware_url:
+                raise HomeAssistantError(
+                    "Enter a firmware file URL before starting the update."
+                )
+
+            cp_id = self.central_system.cpids.get(self.cpid, self.cpid)
+            cp = self.central_system.charge_points.get(cp_id)
+            if cp is None or cp._ocpp_version != "1.6":
+                raise HomeAssistantError(
+                    "Firmware updates are not available for this charger."
+                )
+            if not (
+                self.central_system.get_supported_features(self.cpid) & Profiles.FW
+            ):
+                raise HomeAssistantError(
+                    "This charger does not support OCPP firmware updates."
+                )
+            if not await cp.update_firmware(firmware_url):
+                raise HomeAssistantError(
+                    "The charger could not start the firmware update."
+                )
+            return
+
         await self.central_system.set_charger_state(
             self.cpid,
             self.entity_description.press_action,

@@ -1136,9 +1136,7 @@ class ChargePoint(cp):
         current_meter_start = self._metrics[ms_key].value
         if tx_has_id and current_meter_start in (None, 0):
             ha_tx = self.get_ha_metric(csess.transaction_id.value, connector_id)
-            ha_meter_start = self.get_ha_metric(
-                csess.meter_start.value, connector_id
-            )
+            ha_meter_start = self.get_ha_metric(csess.meter_start.value, connector_id)
             _LOGGER.warning(
                 "Session recovery diagnostic conn=%s incoming_tx=%s "
                 "internal_meter_start=%r ha_tx=%r ha_meter_start=%r",
@@ -1296,9 +1294,7 @@ class ChargePoint(cp):
                     session_energy = self._metrics[
                         (connector_id, csess.session_energy.value)
                     ]
-                    session_energy.value = round(
-                        cumulative_kwh - meter_start_kwh, 3
-                    )
+                    session_energy.value = round(cumulative_kwh - meter_start_kwh, 3)
                     session_energy.unit = HA_ENERGY_UNIT
             except (AttributeError, TypeError, ValueError):
                 pass
@@ -1499,7 +1495,9 @@ class ChargePoint(cp):
         return result
 
     @on(Action.stop_transaction)
-    async def on_stop_transaction(self, meter_stop, timestamp, transaction_id, **kwargs):
+    async def on_stop_transaction(
+        self, meter_stop, timestamp, transaction_id, **kwargs
+    ):
         """Stop the current transaction (multi-connector)."""
 
         # The charger discards the transaction-bound TxProfile when the
