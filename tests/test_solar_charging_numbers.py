@@ -4,8 +4,12 @@ from types import SimpleNamespace
 
 import pytest
 
-from custom_components.ocpp.enums import HAChargerDetails
-from custom_components.ocpp.number import NUMBERS, ChargePointNumber
+from custom_components.ocpp.number import (
+    NUMBERS,
+    REMOVED_NUMBER_KEYS,
+    ChargePointNumber,
+)
+from custom_components.ocpp.switch import SWITCHES, ChargePointSwitch
 
 
 SOLAR_NUMBERS = {
@@ -13,31 +17,37 @@ SOLAR_NUMBERS = {
     for description in NUMBERS
     if description.ocpp_key
     and description.ocpp_key
-    in {"SolarMode", "SolarCurrentFromGrid", "SolarStableTime"}
+    in {"SolarCurrentFromGrid", "SolarStableTime"}
 }
 
 
 def test_solar_number_descriptions():
-    """Expose the spreadsheet's three solar keys with their default values."""
+    """Expose the two solar settings as writable number entities."""
     assert {
         key: description.initial_value
         for key, description in SOLAR_NUMBERS.items()
     } == {
-        "SolarMode": 0,
         "SolarCurrentFromGrid": 0,
         "SolarStableTime": 10,
     }
-    assert len(SOLAR_NUMBERS) == 3
-    assert all(description.model_gated for description in SOLAR_NUMBERS.values())
+    assert len(SOLAR_NUMBERS) == 2
+    assert all(not description.model_gated for description in SOLAR_NUMBERS.values())
+
+
+def test_solar_mode_is_an_on_off_switch():
+    """Map the SolarMode OCPP integer values to switch states."""
+    description = next(desc for desc in SWITCHES if desc.key == "solar_mode")
+
+    assert description.ocpp_key == "SolarMode"
+    assert description.default_state is False
+    assert description.ocpp_on_value == "1"
+    assert description.ocpp_off_value == "0"
+    assert not description.model_gated
+    assert "solar_mode" in REMOVED_NUMBER_KEYS
 
 
 @pytest.mark.parametrize(
-    ("ocpp_key", "value"),
-    [
-        ("SolarMode", 1),
-        ("SolarCurrentFromGrid", 8),
-        ("SolarStableTime", 30),
-    ],
+    ("ocpp_key", "value"), [("SolarCurrentFromGrid", 8), ("SolarStableTime", 30)]
 )
 @pytest.mark.asyncio
 async def test_solar_number_writes_ocpp_configuration(hass, ocpp_key, value):
@@ -66,24 +76,60 @@ async def test_solar_number_writes_ocpp_configuration(hass, ocpp_key, value):
     assert writes == [(ocpp_key, str(value))]
 
 
-def test_solar_numbers_only_available_on_supported_vendor_models(hass):
-    """Do not surface vendor-specific controls for unrelated chargers."""
-    model = None
+@pytest.mark.asyncio
+async def test_solar_mode_switch_sends_on_and_off_values(hass):
+    """Turn SolarMode on with 1 and off with 0."""
+    writes = []
+
+    async def configure(key, value):
+        writes.append((key, value))
+        return "Accepted"
+
+    async def get_configuration(key):
+        return writes[-1][1]
+
     central_system = SimpleNamespace(
-        get_metric=lambda cpid, metric: model
-        if metric == HAChargerDetails.model.value
-        else None,
+        cpids={"test_cpid": "test_cp"},
+        charge_points={
+            "test_cp": SimpleNamespace(
+                configure=configure, get_configuration=get_configuration
+            )
+        },
+        get_available=lambda *args: True,
+    )
+    description = next(desc for desc in SWITCHES if desc.key == "solar_mode")
+    entity = ChargePointSwitch(central_system, "test_cpid", description)
+    entity.async_write_ha_state = lambda: None
+
+    await entity.async_turn_on()
+    assert entity.is_on
+    await entity.async_turn_off()
+    assert not entity.is_on
+    assert writes == [("SolarMode", "1"), ("SolarMode", "0")]
+
+
+def test_solar_mode_switch_available_without_a_recognized_model():
+    """Make SolarMode controllable when the charger is connected."""
+    central_system = SimpleNamespace(get_available=lambda *args: True)
+    description = next(desc for desc in SWITCHES if desc.key == "solar_mode")
+    entity = ChargePointSwitch(central_system, "test_cpid", description)
+
+    assert entity.available
+
+
+@pytest.mark.parametrize("ocpp_key", ["SolarCurrentFromGrid", "SolarStableTime"])
+def test_solar_numbers_available_without_a_recognized_model(hass, ocpp_key):
+    """Use connection availability rather than a hard-coded model allowlist."""
+    central_system = SimpleNamespace(
         get_available=lambda *args: True,
     )
     entity = ChargePointNumber(
         hass,
         central_system,
         "test_cpid",
-        SOLAR_NUMBERS["SolarMode"],
+        SOLAR_NUMBERS[ocpp_key],
         connector_id=None,
         op_connector_id=0,
     )
 
-    assert not entity.available
-    model = "EVSC7S"
     assert entity.available

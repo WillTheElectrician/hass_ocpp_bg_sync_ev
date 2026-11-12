@@ -155,16 +155,6 @@ NUMBERS: Final = [
         model_gated=True,
     ),
     OcppNumberDescription(
-        key="solar_mode",
-        name="Solar Charging Mode",
-        icon="mdi:solar-power",
-        initial_value=0,
-        native_step=1,
-        ocpp_key="SolarMode",
-        mode=NumberMode.BOX,
-        model_gated=True,
-    ),
-    OcppNumberDescription(
         key="solar_current_from_grid",
         name="Solar Current from Grid",
         icon="mdi:transmission-tower-import",
@@ -172,7 +162,6 @@ NUMBERS: Final = [
         native_step=1,
         ocpp_key="SolarCurrentFromGrid",
         mode=NumberMode.BOX,
-        model_gated=True,
     ),
     OcppNumberDescription(
         key="solar_stable_time",
@@ -183,7 +172,6 @@ NUMBERS: Final = [
         native_unit_of_measurement=TIME_SECONDS,
         ocpp_key="SolarStableTime",
         mode=NumberMode.BOX,
-        model_gated=True,
     ),
 ]
 
@@ -200,6 +188,7 @@ NUMBERS: Final = [
 REMOVED_NUMBER_KEYS: Final = [
     "get_ct_clamp_value",  # moved to switch.py as a toggle (0/1)
     "grid_current_interval",  # writable but inert, see above
+    "solar_mode",  # moved to switch.py as a toggle (0/1)
 ]
 
 

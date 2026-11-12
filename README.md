@@ -33,7 +33,7 @@ which matters when a solar controller recalculates every few seconds.
 - Max Current (hardware limit), Overvoltage Protection Limit, Connection Timeout,
   Meter Reading Interval
 - Indicator LED Brightness
-- Solar Charging Mode, Solar Current from Grid, and Solar Stable Time
+- Solar Charging Mode toggle, Solar Current from Grid, and Solar Stable Time
 - Auto-Unlock on Unplug
 - Enable CT Clamp
 - Charge When Plugged In — the charger authorises itself on plug-in, no server
