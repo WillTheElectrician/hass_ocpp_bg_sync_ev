@@ -128,6 +128,15 @@ SWITCHES: Final[list[OcppSwitchDescription]] = [
         ocpp_off_value="0",
     ),
     OcppSwitchDescription(
+        key="solar_mode",
+        name="Solar Charging Mode",
+        icon="mdi:solar-power",
+        default_state=False,
+        ocpp_key="SolarMode",
+        ocpp_on_value="1",
+        ocpp_off_value="0",
+    ),
+    OcppSwitchDescription(
         key="charge_on_plug_in",
         name="Charge When Plugged In (No Server Required)",
         icon="mdi:ev-plug-type2",

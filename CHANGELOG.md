@@ -4,5 +4,5 @@
 
 ### Added
 
-- Add Solar Charging Mode, Solar Current from Grid, and Solar Stable Time
-  controls for supported SyncEV chargers.
+- Add a Solar Charging Mode on/off switch and Solar Current from Grid and Solar
+  Stable Time number controls for SyncEV chargers.
