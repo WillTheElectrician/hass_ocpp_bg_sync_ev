@@ -16,16 +16,14 @@ SOLAR_NUMBERS = {
     description.ocpp_key: description
     for description in NUMBERS
     if description.ocpp_key
-    and description.ocpp_key
-    in {"SolarCurrentFromGrid", "SolarStableTime"}
+    and description.ocpp_key in {"SolarCurrentFromGrid", "SolarStableTime"}
 }
 
 
 def test_solar_number_descriptions():
     """Expose the two solar settings as writable number entities."""
     assert {
-        key: description.initial_value
-        for key, description in SOLAR_NUMBERS.items()
+        key: description.initial_value for key, description in SOLAR_NUMBERS.items()
     } == {
         "SolarCurrentFromGrid": 0,
         "SolarStableTime": 10,
