@@ -33,6 +33,7 @@ which matters when a solar controller recalculates every few seconds.
 - Max Current (hardware limit), Overvoltage Protection Limit, Connection Timeout,
   Meter Reading Interval
 - Indicator LED Brightness
+- Solar Charging Mode, Solar Current from Grid, and Solar Stable Time
 - Auto-Unlock on Unplug
 - Enable CT Clamp
 - Charge When Plugged In — the charger authorises itself on plug-in, no server
@@ -54,7 +55,7 @@ that used to trip a `C1249 Too Many Wake-Up Requests` fault on a VW ID.3.
 Via HACS:
 
 1. HACS → three-dot menu → **Custom repositories**
-2. Add `https://github.com/jgogoes/hass_ocpp_bg_sync_ev`, type **Integration**
+2. Add `https://github.com/WillTheElectrician/hass_ocpp_bg_sync_ev`, type **Integration**
 3. Search for **BG Sync**, download, restart Home Assistant
 
 Or copy `custom_components/ocpp/` into your `config/custom_components/` folder
