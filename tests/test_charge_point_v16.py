@@ -2103,6 +2103,70 @@ async def test_on_diagnostics_status_notification(
             await ws.close()
 
 
+@pytest.mark.timeout(10)
+@pytest.mark.parametrize(
+    "setup_config_entry",
+    [{"port": 9078, "cp_id": "CP_fwstatus", "cms": "cms_fwstatus"}],
+    indirect=True,
+)
+@pytest.mark.parametrize("cp_id", ["CP_fwstatus"])
+@pytest.mark.parametrize("port", [9078])
+async def test_on_firmware_status_notification(
+    hass, socket_enabled, cp_id, port, setup_config_entry, caplog, monkeypatch
+):
+    """Log the firmware status sent by the charger."""
+    cs: CentralSystem = setup_config_entry
+
+    async with websockets.connect(
+        f"ws://127.0.0.1:{port}/{cp_id}", subprotocols=["ocpp1.6"]
+    ) as ws:
+        cp = ChargePoint(f"{cp_id}_client", ws)
+        cp_task = asyncio.create_task(cp.start())
+
+        try:
+            await cp.send_boot_notification()
+            await wait_ready(cs.charge_points[cp_id])
+            srv_cp: ServerCP = cs.charge_points[cp_id]
+            notifications = []
+            tasks = []
+
+            async def fake_update(*args):
+                return None
+
+            async def fake_notify(msg: str, title: str = "Ocpp integration"):
+                notifications.append(msg)
+
+            def fake_async_create_task(coro):
+                task = asyncio.create_task(coro)
+                tasks.append(task)
+                return task
+
+            monkeypatch.setattr(srv_cp, "update", fake_update, raising=True)
+            monkeypatch.setattr(srv_cp, "notify_ha", fake_notify, raising=True)
+            monkeypatch.setattr(
+                srv_cp.hass, "async_create_task", fake_async_create_task, raising=True
+            )
+
+            with caplog.at_level(logging.INFO, logger="custom_components.ocpp.ocppv16"):
+                resp = await cp.call(
+                    call.FirmwareStatusNotification(status="Downloaded")
+                )
+
+            assert resp is not None
+            await asyncio.gather(*tasks)
+            assert any(
+                record.getMessage()
+                == "FirmwareStatusNotification for CP_fwstatus: Downloaded"
+                for record in caplog.records
+            )
+            assert notifications == ["Firmware upload status: Downloaded"]
+        finally:
+            cp_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await cp_task
+            await ws.close()
+
+
 @pytest.mark.timeout(30)
 @pytest.mark.parametrize(
     "setup_config_entry",
