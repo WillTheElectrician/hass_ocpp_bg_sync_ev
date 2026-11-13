@@ -222,7 +222,11 @@ async def test_services(hass, cpid, serv_list, socket_enabled):
 
     for number in NUMBERS:
         # test setting value of number slider
-        await set_number(hass, cpid, number.key, 10)
+        value = max(
+            number.native_min_value or 10,
+            min(10, number.native_max_value or 10),
+        )
+        await set_number(hass, cpid, number.key, value)
 
 
 test_services.__test__ = False

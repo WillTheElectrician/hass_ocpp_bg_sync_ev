@@ -1407,9 +1407,7 @@ class ChargePoint(cp):
     @on(Action.firmware_status_notification)
     def on_firmware_status(self, status, **kwargs):
         """Handle firmware status notification."""
-        _LOGGER.info(
-            "FirmwareStatusNotification for %s: %s", self.settings.cpid, status
-        )
+        _LOGGER.info("FirmwareStatusNotification for %s: %s", self.id, status)
         self._metrics[0][cstat.firmware_status.value].value = status
         self.hass.async_create_task(self.update(self.settings.cpid))
         self.hass.async_create_task(self.notify_ha(f"Firmware upload status: {status}"))
