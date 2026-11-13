@@ -3210,6 +3210,9 @@ async def test_post_connect_set_availability_error_swallowed_and_REM_triggers_ca
 ):
     """Inner try around set_availability: generic Exception swallowed, and REM triggers still called."""
     cs: CentralSystem = setup_config_entry
+    monkeypatch.setattr(
+        hass.config_entries, "async_update_entry", lambda *args, **kwargs: None
+    )
 
     # Patch server CP methods before connecting.
     from custom_components.ocpp.ocppv16 import ChargePoint as ServerCP
@@ -3368,6 +3371,9 @@ async def test_post_connect_trigger_boot_notification_raises_outer_caught(
 ):
     """Outer try: trigger_boot_notification raises -> swallowed; post_connect_success already True."""
     cs: CentralSystem = setup_config_entry
+    monkeypatch.setattr(
+        hass.config_entries, "async_update_entry", lambda *args, **kwargs: None
+    )
 
     from custom_components.ocpp.ocppv16 import ChargePoint as ServerCP
 
@@ -3444,6 +3450,9 @@ async def test_post_connect_trigger_status_notification_raises_outer_caught(
 ):
     """Outer try: trigger_status_notification raises -> swallowed; post_connect_success already True."""
     cs: CentralSystem = setup_config_entry
+    monkeypatch.setattr(
+        hass.config_entries, "async_update_entry", lambda *args, **kwargs: None
+    )
 
     from custom_components.ocpp.ocppv16 import ChargePoint as ServerCP
 
@@ -3591,6 +3600,9 @@ async def test_post_connect_set_standard_configuration_raises_outer_caught(
 ):
     """A standard-configuration failure is non-fatal to post-connect setup."""
     cs: CentralSystem = setup_config_entry
+    monkeypatch.setattr(
+        hass.config_entries, "async_update_entry", lambda *args, **kwargs: None
+    )
 
     from custom_components.ocpp.ocppv16 import ChargePoint as ServerCP
 
