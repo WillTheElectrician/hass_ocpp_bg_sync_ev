@@ -1584,7 +1584,7 @@ async def test_monitor_connection_timeout_branch(
         monkeypatch.setattr(srv_cp.hass, "async_create_task", noop_task, raising=True)
 
         async def fast_sleep(_):
-            return None  # skip the initial sleep(10) and interval sleeps
+            return None  # skip the backstop and interval sleeps
 
         monkeypatch.setattr(cp_mod.asyncio, "sleep", fast_sleep, raising=True)
 

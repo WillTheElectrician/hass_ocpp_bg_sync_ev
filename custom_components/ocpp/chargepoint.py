@@ -507,13 +507,13 @@ class ChargePoint(cp):
 
         # Add backstop to start post connect for non-compliant chargers
         # after 10s to allow for when a boot notification has not been received
-        try:
-            await asyncio.wait_for(connection.wait_closed(), timeout=10)
-        except TimeoutError:
-            if not self.post_connect_success:
-                self.hass.async_create_task(self.post_connect())
-        else:
-            return
+        for _ in range(10):
+            if connection.state is not State.OPEN:
+                return
+            await asyncio.sleep(1)
+
+        if connection.state is State.OPEN and not self.post_connect_success:
+            self.hass.async_create_task(self.post_connect())
 
         while connection.state is State.OPEN:
             try:
