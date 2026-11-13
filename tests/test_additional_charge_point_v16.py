@@ -1068,7 +1068,7 @@ async def test_start_transaction_meter_start_cast_exception(
             )
 
             # Call the handler directly with a non-numeric meter_start
-            result = srv.on_start_transaction(
+            result = await srv.on_start_transaction(
                 connector_id=1, id_tag="test_cp", meter_start="not-a-number"
             )
             assert result is not None
@@ -1112,7 +1112,7 @@ async def test_start_transaction_auth_denied_returns_tx0(
                 raising=True,
             )
             # Call handler directly to inspect response
-            result = srv.on_start_transaction(
+            result = await srv.on_start_transaction(
                 connector_id=1, id_tag="bad", meter_start=0
             )
             assert result.transaction_id == 0
@@ -1155,7 +1155,7 @@ async def test_stop_transaction_misc_paths(
             srv._metrics[(1, "Energy.Active.Import.Register")].unit = "kWs"  # unknown
 
             # Call stop_transaction with a non-numeric meter_stop so 1225-1226 -> 0.0
-            result = srv.on_stop_transaction(
+            result = await srv.on_stop_transaction(
                 meter_stop="not-a-number", timestamp=None, transaction_id=777
             )
             assert result is not None
