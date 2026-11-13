@@ -52,16 +52,16 @@ async def test_sensor(hass, socket_enabled):
     ) as ws:
         # Wait for setup to complete
         await asyncio.sleep(1)
-        # Test reactive power sensor
-        state = hass.states.get(f"sensor.{cpid}_power_reactive_import")
-        assert (
-            state.attributes.get(ATTR_DEVICE_CLASS) == SensorDeviceClass.REACTIVE_POWER
-        )
+        # These reactive metrics are disabled by default, so validate the
+        # state metadata on enabled import sensors instead.
+        state = hass.states.get(f"sensor.{cpid}_power_active_import")
+        assert state.attributes.get(ATTR_DEVICE_CLASS) == SensorDeviceClass.POWER
         assert state.attributes.get(ATTR_STATE_CLASS) == SensorStateClass.MEASUREMENT
-        # Test reactive energy sensor, not having own device class yet
-        state = hass.states.get(f"sensor.{cpid}_energy_reactive_import_register")
-        assert state.attributes.get(ATTR_DEVICE_CLASS) is None
-        assert state.attributes.get(ATTR_STATE_CLASS) is None
+        state = hass.states.get(f"sensor.{cpid}_energy_active_import_register")
+        assert state.attributes.get(ATTR_DEVICE_CLASS) == SensorDeviceClass.ENERGY
+        assert (
+            state.attributes.get(ATTR_STATE_CLASS) == SensorStateClass.TOTAL_INCREASING
+        )
 
         await ws.close()
 

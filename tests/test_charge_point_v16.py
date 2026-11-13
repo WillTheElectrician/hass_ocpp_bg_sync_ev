@@ -135,6 +135,9 @@ test_switches.__test__ = False
 
 async def test_buttons(hass, cpid, socket_enabled):
     """Test button operations."""
+    hass.states.async_set(
+        f"text.{cpid}_firmware_url", "https://example.com/firmware.bin"
+    )
     for button in BUTTONS:
         await press_button(hass, cpid, button.key)
 
@@ -891,6 +894,17 @@ async def test_stop_transaction_paths_v16_c(
 
             await cp.send_start_transaction(12345)
             await set_report_session_energyreport(cs, cp_id, False)
+            srv_cp = cs.charge_points[cp_id]
+            reset_measurands = [
+                "Current.Import",
+                "Power.Active.Import",
+                "Power.Reactive.Import",
+                "Current.Export",
+                "Power.Active.Export",
+                "Power.Reactive.Export",
+            ]
+            for measurand in reset_measurands:
+                srv_cp._metrics[(1, measurand)].value = 1
             await cp.send_stop_transaction(1)
 
             cpid = cs.charge_points[cp_id].settings.cpid
@@ -901,14 +915,7 @@ async def test_stop_transaction_paths_v16_c(
             assert cs.get_unit(cpid, "Energy.Session") == "kWh"
 
             # After stop, these measurands must be zeroed
-            for meas in [
-                "Current.Import",
-                "Power.Active.Import",
-                "Power.Reactive.Import",
-                "Current.Export",
-                "Power.Active.Export",
-                "Power.Reactive.Export",
-            ]:
+            for meas in reset_measurands:
                 assert float(cs.get_metric(cpid, meas)) == 0.0
 
             # Optional: stop reason captured
@@ -2147,7 +2154,7 @@ async def test_on_firmware_status_notification(
                 srv_cp.hass, "async_create_task", fake_async_create_task, raising=True
             )
 
-            with caplog.at_level(logging.INFO, logger="custom_components.ocpp.ocppv16"):
+            with caplog.at_level(logging.INFO, logger="custom_components.ocpp"):
                 resp = await cp.call(
                     call.FirmwareStatusNotification(status="Downloaded")
                 )
@@ -3269,6 +3276,8 @@ async def test_post_connect_set_availability_error_swallowed_and_REM_triggers_ca
             assert called["status"] == 1
         finally:
             task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await task
 
 
 # ---------------------------------------------------------------------------
@@ -3411,6 +3420,8 @@ async def test_post_connect_trigger_boot_notification_raises_outer_caught(
             assert getattr(srv_cp, "post_connect_success", False) is True
         finally:
             task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await task
 
 
 # ---------------------------------------------------------------------------
@@ -3490,6 +3501,8 @@ async def test_post_connect_trigger_status_notification_raises_outer_caught(
             assert getattr(srv_cp, "post_connect_success", False) is True
         finally:
             task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await task
 
 
 # ---------------------------------------------------------------------------
@@ -3572,7 +3585,7 @@ async def test_post_connect_update_entry_raises_outer_caught(
 async def test_post_connect_set_standard_configuration_raises_outer_caught(
     hass, socket_enabled, cp_id, port, setup_config_entry, monkeypatch
 ):
-    """Outer try: set_standard_configuration raises -> swallowed, success flag not set."""
+    """A standard-configuration failure is non-fatal to post-connect setup."""
     cs: CentralSystem = setup_config_entry
 
     from custom_components.ocpp.ocppv16 import ChargePoint as ServerCP
@@ -3613,9 +3626,11 @@ async def test_post_connect_set_standard_configuration_raises_outer_caught(
             srv_cp = cs.charge_points[cp_id]
 
             await srv_cp.post_connect()
-            assert getattr(srv_cp, "post_connect_success", False) is not True
+            assert getattr(srv_cp, "post_connect_success", False) is True
         finally:
             task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await task
 
 
 # ---------------------------------------------------------------------------
@@ -4078,7 +4093,7 @@ async def test_set_charge_rate_exception_paths(
 
             async def fake_get_configuration(key: str = "") -> str:
                 if key == ckey.charging_schedule_allowed_charging_rate_unit.value:
-                    return "A"
+                    return "Current"
                 if key == ckey.charge_profile_max_stack_level.value:
                     return "2"
                 return ""

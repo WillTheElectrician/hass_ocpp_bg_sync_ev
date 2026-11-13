@@ -38,6 +38,9 @@ def cp_v16():
     cp._ocpp_version = "1.6"
     cp.active_transaction_id = 0
     cp._active_tx = {}
+    cp._rate_unit_cache = None
+    cp._stack_level_cache = None
+    cp._applied_limits = {}
     # set_charge_rate calls these (we’ll monkeypatch per-test):
     # - cp.get_configuration(key)
     # - cp.call(req)
